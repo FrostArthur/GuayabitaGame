@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="main.js"></script>
+    <title>Guayabita</title>
+</head>
+<body>
+    <center>
+    <header>
+        <h1>La guayabita</h1>
+    </header>
+    <section id="registro_jugador">
+        <h2>Registrar jugador</h2>
+        <form>
+            <label for="nombre_jugador">Nombre del nuevo jugador</label>
+            <input type="text" name="nombre_jugador" id="nombre_jugador" required>
+            <br>
+            <label for="cuota_inicial">Cuota inicial</label>
+            <input type="number" name="cuota_inicial" id="cuota_inicial" required>
+            <br>
+            <button id="registrar_btn">Registrar</button>
+        </form>
+    </section>
+    <br>
+    <button id="empezar_juego_btn">Empezar Juego</button>
+    <section id="definir_turnos" hidden>
+        <h2>Definici&oacute;n de turnos</h2>
+        <section>
+            <p id="turno_jugador"></p>
+            <button id="d_lanzar_btn">Lanzar Dado</button>
+            <p id="numero_obtenido_para_turno"></p>
+        </section>
+    </section>
+    <section id="en_juego">
+        <h2>Guayabita en juego</h2>
+    </section>
+</body>
+</html>
