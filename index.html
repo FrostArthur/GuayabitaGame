@@ -11,20 +11,31 @@
     <header>
         <h1>La guayabita</h1>
     </header>
-    <section id="registro_jugador">
+
+    <!--Ingresar la cuota-->
+    <section id="seccion_cuota">
+        <h2>Cuota</h2>
+        <label for="cuota">Valor de la cuota para la partida: </label>
+        <input type="text" name="cuota" id="cuota" required>
+        <br>
+        <br>
+        <button id="cuota_btn">Registrar Cuota</button>
+    </section>
+
+    <!--Registrar jugadores-->
+    <section id="registro_jugador" hidden>
         <h2>Registrar jugador</h2>
         <form>
             <label for="nombre_jugador">Nombre del nuevo jugador</label>
             <input type="text" name="nombre_jugador" id="nombre_jugador" required>
-            <br>
-            <label for="cuota_inicial">Cuota inicial</label>
-            <input type="number" name="cuota_inicial" id="cuota_inicial" required>
-            <br>
+            <br>           
             <button id="registrar_btn">Registrar</button>
         </form>
     </section>
     <br>
-    <button id="empezar_juego_btn">Empezar Juego</button>
+    <button id="empezar_juego_btn" hidden>Empezar Juego</button>
+    
+    <!--Tirar dados para los turnos-->
     <section id="definir_turnos" hidden>
         <h2>Definici&oacute;n de turnos</h2>
         <section>
@@ -33,8 +44,31 @@
             <p id="numero_obtenido_para_turno"></p>
         </section>
     </section>
-    <section id="en_juego">
-        <h2>Guayabita en juego</h2>
-    </section>
+
+    <section id="juego" hidden>
+    <h2>Turno de juego</h2>
+    <p>Pote actual: $<span id="pote_actual">0</span></p>
+    <p id="turno_actual_jugador"></p>
+
+    <div id="fase_primer_tiro">
+        <button id="lanzar_primer_dado_btn">Lanzar dado</button>
+        <p id="resultado_primer_tiro"></p>
+    </div>
+
+    <div id="fase_decision_apuesta" hidden>
+        <p id="mensaje_decision"></p>
+        <label for="monto_apuesta">Monto a apostar</label>
+        <input type="number" id="monto_apuesta" min="0" step="0.01">
+        <button id="apostar_btn">Apostar</button>
+        <button id="no_arriesgar_btn">No arriesgar</button>
+    </div>
+
+    <div id="fase_segundo_tiro" hidden>
+        <button id="lanzar_segundo_dado_btn">Lanzar dado (apuesta)</button>
+        <p id="resultado_segundo_tiro"></p>
+    </div>
+
+    <p id="mensaje_resultado_turno"></p>
+</section>
 </body>
 </html>

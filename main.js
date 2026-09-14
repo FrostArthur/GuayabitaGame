@@ -4,39 +4,54 @@ function dado() {
 
 let jugadores_registrados = [];
 let jugadores_en_orden = [];
+let cuota = 0;
 let pote = 0.0;
 
-function registrar_jugador(nombre, cuota) {
-    let nuevo_jugador = {
-        nombre: nombre,
-        cuota_inicial: cuota
-    };
-    jugadores_registrados.push(nuevo_jugador);
+
+function registrar_jugador(nombre) {
+    jugadores_registrados.push(nombre);
 }
+
 
 const esperar = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-//Eventos
 document.addEventListener('DOMContentLoaded', () => {
+    let cola_grupos = [];
+    let indice_en_grupo = 0;
+    let resultados_grupo = [];
+
+    //Flags
     let en_definicion_turnos = false;
     let en_juego = false;
 
     //Elementos del DOM necesarios
+    const seccion_cuota = document.getElementById('seccion_cuota');
     const seccion_registro = document.getElementById('registro_jugador');
-    const seccion_definir_turnos = document.getElementById('definir_turnos');
-    const boton_registrar = document.getElementById('registrar_btn');
     const boton_empezar_juego = document.getElementById('empezar_juego_btn');
     const campo_nombre_jugador = document.getElementById('nombre_jugador');
-    const campo_cuota_jugador = document.getElementById('cuota_inicial');
-    const turno_jugador = document.getElementById('turno_jugador');
-    const lanzar_dado_inicial_boton = document.getElementById('d_lanzar_btn');
+    const seccion_definir_turnos = document.getElementById('definir_turnos');
     const numero_obtenido_para_turno = document.getElementById('numero_obtenido_para_turno');
+    const turno_jugador = document.getElementById('turno_jugador');
 
-    //Registrar jugador (Definitva)
-    boton_registrar.addEventListener('click', event => {
+    //Ingresar cuota
+    document.getElementById('cuota_btn').addEventListener('click', event => {
+        event.preventDefault();
+        let valor_cuota = parseFloat(document.getElementById('cuota').value);
+        if (isNaN(valor_cuota) || valor_cuota <= 0) {
+            alert("No se ha ingresado un valor para la cuota o el valor es invalido");
+            return;
+        }
+        cuota = valor_cuota;
+        console.log(cuota);
+        seccion_cuota.hidden = true;
+        seccion_registro.hidden = false;
+        boton_empezar_juego.hidden = false;
+    });
+
+    //Registrar jugador
+    document.getElementById('registrar_btn').addEventListener('click', event => {
         event.preventDefault();
         const nombre = campo_nombre_jugador.value.trim();
-        const cuota = parseFloat(campo_cuota_jugador.value);
 
         if (nombre === "") {
             alert("El nombre del jugador no puede estar vacio");
@@ -44,52 +59,158 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        if (isNaN(cuota) || cuota <= 0.0) {
-            alert("La cuota inicial no puede estar vacia ni ser 0 o negativa");
-            campo_cuota_jugador.focus();
-            return;
-        } 
-
-        registrar_jugador(nombre, cuota);
+        registrar_jugador(nombre);
         pote += cuota;
         campo_nombre_jugador.value = "";
-        campo_cuota_jugador.value = "";
         console.log(jugadores_registrados);
         console.log("Valor actual del pote: " + pote)
     });
-    
-    //Definir turnos
-    boton_empezar_juego.addEventListener('click', event => {
-        //Verificar que haya jugadores para empezar
-        event.preventDefault;
-        if (jugadores_registrados.length <= 1) {
-            alert("No hay suficientes jugadores para empezar la partida. Cant. Jugadores Actual: " + jugadores.length);
-            return;
-        }
-        seccion_registro.hidden = true;
-        seccion_definir_turnos.hidden = false;
-        boton_empezar_juego.hidden = true;
-        en_definicion_turnos = true;
 
-        cola_grupos = [[...jugadores_registrados]];
-        procesar_siguiente_grupo();
-    });
-
-    function actualizar_ui_turno(jugador) {
-        turno_jugador.innerText = "Jugador: " + jugador.nombre;
+    function actualizar_ui_turno(nombre) {
+        turno_jugador.innerText = "Jugador: " + nombre;
         numero_obtenido_para_turno.innerText = "Numero obtenido: ";
     }
+
+    // ---- Elementos del DOM para la fase de juego ----
+    const seccion_juego = document.getElementById('juego');
+    const pote_actual_elem = document.getElementById('pote_actual');
+    const turno_actual_jugador_elem = document.getElementById('turno_actual_jugador');
+    const fase_primer_tiro = document.getElementById('fase_primer_tiro');
+    const boton_lanzar_primer = document.getElementById('lanzar_primer_dado_btn');
+    const resultado_primer_tiro_elem = document.getElementById('resultado_primer_tiro');
+    const fase_decision_apuesta = document.getElementById('fase_decision_apuesta');
+    const mensaje_decision_elem = document.getElementById('mensaje_decision');
+    const campo_monto_apuesta = document.getElementById('monto_apuesta');
+    const boton_apostar = document.getElementById('apostar_btn');
+    const boton_no_arriesgar = document.getElementById('no_arriesgar_btn');
+    const fase_segundo_tiro = document.getElementById('fase_segundo_tiro');
+    const boton_lanzar_segundo = document.getElementById('lanzar_segundo_dado_btn');
+    const resultado_segundo_tiro_elem = document.getElementById('resultado_segundo_tiro');
+    const mensaje_resultado_turno_elem = document.getElementById('mensaje_resultado_turno');
+
+    let turno_actual = 0;
+    let primer_tiro_valor = 0;
+    let monto_apostado = 0;
+
+    function actualizar_pote_ui() {
+        pote_actual_elem.innerText = pote.toFixed(2);
+    }
+
+    function iniciar_turno() {
+        fase_primer_tiro.hidden = false;
+        fase_decision_apuesta.hidden = true;
+        fase_segundo_tiro.hidden = true;
+        resultado_primer_tiro_elem.innerText = "";
+        resultado_segundo_tiro_elem.innerText = "";
+        mensaje_resultado_turno_elem.innerText = "";
+        campo_monto_apuesta.value = "";
+
+        let jugador = jugadores_en_orden[turno_actual];
+        turno_actual_jugador_elem.innerText = "Turno de: " + jugador;
+        actualizar_pote_ui();
+    }
+
+    function pasar_turno() {
+        turno_actual = (turno_actual + 1) % jugadores_en_orden.length;
+        iniciar_turno();
+    }
+
+    function reiniciar_ronda_guayabita(nombre) {
+        alert(nombre + "¡Se comió la guayabita! Todos vuelven a poner la cuota inicial.");
+        pote = jugadores_en_orden.length * cuota;
+        actualizar_pote_ui();
+        pasar_turno();
+    }
+
+    boton_lanzar_primer.addEventListener('click', event => {
+        event.preventDefault();
+        primer_tiro_valor = dado();
+        resultado_primer_tiro_elem.innerText = "Resultado: " + primer_tiro_valor;
+
+        if (primer_tiro_valor === 1 || primer_tiro_valor === 6) {
+            pote += cuota;
+            actualizar_pote_ui();
+            mensaje_resultado_turno_elem.innerText =
+                jugadores_en_orden[turno_actual] + " sacó " + primer_tiro_valor +
+                " y pierde el turno. Pone " + cuota.toFixed(2) + " al pote.";
+            fase_primer_tiro.hidden = true;
+            setTimeout(pasar_turno, 2000);
+            return;
+        }
+
+        // 2, 3, 4 o 5: puede apostar
+        fase_primer_tiro.hidden = true;
+        fase_decision_apuesta.hidden = false;
+        mensaje_decision_elem.innerText =
+            "Sacaste " + primer_tiro_valor + ". ¿Quieres apostar parte del pote ($" +
+            pote.toFixed(2) + ")?";
+        campo_monto_apuesta.max = pote;
+    });
+
+    boton_no_arriesgar.addEventListener('click', event => {
+        event.preventDefault();
+        mensaje_resultado_turno_elem.innerText =
+            jugadores_en_orden[turno_actual] + " decidió no arriesgar.";
+        fase_decision_apuesta.hidden = true;
+        setTimeout(pasar_turno, 1500);
+    });
+
+    boton_apostar.addEventListener('click', event => {
+        event.preventDefault();
+        let monto = parseFloat(campo_monto_apuesta.value);
+
+        if (isNaN(monto) || monto <= 0) {
+            alert("Debes ingresar un monto de apuesta valido");
+            return;
+        }
+        if (monto > pote) {
+            alert("No puedes apostar mas de lo que hay en el pote");
+            return;
+        }
+
+        monto_apostado = monto;
+        fase_decision_apuesta.hidden = true;
+        fase_segundo_tiro.hidden = false;
+    });
+
+    boton_lanzar_segundo.addEventListener('click', event => {
+        event.preventDefault();
+        let segundo_tiro_valor = dado();
+        resultado_segundo_tiro_elem.innerText = "Resultado: " + segundo_tiro_valor;
+        fase_segundo_tiro.hidden = true;
+
+        if (segundo_tiro_valor > primer_tiro_valor) {
+            let se_comio_la_guayabita = (monto_apostado === pote);
+            pote -= monto_apostado;
+            actualizar_pote_ui();
+            mensaje_resultado_turno_elem.innerText =
+                jugadores_en_orden[turno_actual] + " gana $" + monto_apostado.toFixed(2) + " del pote.";
+
+            if (se_comio_la_guayabita) {
+                setTimeout(reiniciar_ronda_guayabita(jugadores_en_orden[turno_actual]), 2000);
+                return;
+            }
+        } else {
+            pote += monto_apostado;
+            actualizar_pote_ui();
+            mensaje_resultado_turno_elem.innerText =
+                jugadores_en_orden[turno_actual] + " pierde la apuesta y pone $" +
+                monto_apostado.toFixed(2) + " al pote.";
+        }
+
+        setTimeout(pasar_turno, 2000);
+    });
 
     function iniciar_partida() {
         seccion_definir_turnos.hidden = true;
         en_definicion_turnos = false;
         en_juego = true;
 
-        console.log("Orden final de turnos:",
-            jugadores_en_orden.map(j => j.nombre));
+        console.log("Orden final de turnos:", jugadores_en_orden);
 
-        alert("Orden de turnos:\n" +
-            jugadores_en_orden.map((j, i) => (i + 1) + ". " + j.nombre).join("\n"));
+        seccion_juego.hidden = false;
+        turno_actual = 0;
+        iniciar_turno();
     }
 
     function procesar_siguiente_grupo() {
@@ -112,7 +233,25 @@ document.addEventListener('DOMContentLoaded', () => {
         actualizar_ui_turno(grupo[indice_en_grupo]);
     }
 
-    lanzar_dado_inicial_boton.addEventListener('click', async(event) => {
+    //Empezar juego
+    boton_empezar_juego.addEventListener('click', event => {
+        event.preventDefault();
+        //Verificar que haya jugadores para empezar
+        if (jugadores_registrados.length <= 1) {
+            alert("No hay suficientes jugadores para empezar la partida. Cant. Jugadores Actual: " + jugadores_registrados.length);
+            return;
+        }
+        seccion_registro.hidden = true;
+        seccion_definir_turnos.hidden = false;
+        boton_empezar_juego.hidden = true;
+        en_definicion_turnos = true;
+
+        cola_grupos = [[...jugadores_registrados]];
+        jugadores_en_orden = [];
+        procesar_siguiente_grupo();
+    });
+
+    document.getElementById('d_lanzar_btn').addEventListener('click', async (event) => {
         event.preventDefault();
 
         let grupo = cola_grupos[0];
